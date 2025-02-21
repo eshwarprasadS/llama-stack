@@ -5,11 +5,10 @@
 # the root directory of this source tree.
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, Union
+from typing import Any, Dict, List, Optional, Protocol
 
 from pydantic import BaseModel
 
-from llama_stack.apis.inference import Message
 from llama_stack.schema_utils import json_schema_type, webmethod
 
 
@@ -26,16 +25,16 @@ class FilteringFunction(Enum):
 
 @json_schema_type
 class SyntheticDataGenerationRequest(BaseModel):
-    """Request to generate synthetic data. A small batch of prompts and a filtering function"""
+    """Request to generate synthetic data"""
 
-    dialogs: List[Message]
-    filtering_function: FilteringFunction = FilteringFunction.none
+    input_data: List[Dict[str, Any]]
+    config: Dict[str, Any]  # Provider-specific configuration
     model: Optional[str] = None
 
 
 @json_schema_type
 class SyntheticDataGenerationResponse(BaseModel):
-    """Response from the synthetic data generation. Batch of (prompt, response, score) tuples that pass the threshold."""
+    """Response containing generated data and execution statistics"""
 
     synthetic_data: List[Dict[str, Any]]
     statistics: Optional[Dict[str, Any]] = None
@@ -45,7 +44,10 @@ class SyntheticDataGeneration(Protocol):
     @webmethod(route="/synthetic-data-generation/generate")
     def synthetic_data_generate(
         self,
-        dialogs: List[Message],
-        filtering_function: FilteringFunction = FilteringFunction.none,
+        input_data: List[Dict[str, Any]],
+        config: Dict[str, Any],
         model: Optional[str] = None,
-    ) -> Union[SyntheticDataGenerationResponse]: ...
+    ) -> SyntheticDataGenerationResponse: ...
+
+    @webmethod(route="/synthetic-data-generation/capabilities")
+    def get_capabilities(self) -> Dict[str, Any]: ...
